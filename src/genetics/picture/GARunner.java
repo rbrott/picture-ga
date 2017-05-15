@@ -21,10 +21,18 @@ public class GARunner extends Thread {
 	private File outputDir;
 	
 	public GARunner(File file, Configuration config) {
+		this(file, file.getName().split("\\.")[0], config);
+	}
+	
+	public GARunner(File file, String name, Configuration config) {
 		c = config;
 		s = new Stats();
-		name = file.getName().split("\\.")[0];
-		String path = file.getPath().split("\\.")[0];
+		this.name = name;
+		String path = file.getParent();
+		if (path == null) {
+			path = "";
+		}
+		path += "/" + name;
 		outputDir = new File(path);
 		if (!c.replaceDir && outputDir.exists()) {
 			int i = 1;
@@ -32,7 +40,7 @@ public class GARunner extends Thread {
 				i++;
 				outputDir = new File(path + i);
 			} while (outputDir.exists());
-			name += i;
+			this.name += i;
 		}
 		if (!outputDir.exists()) {
 			outputDir.mkdirs();
@@ -65,7 +73,7 @@ public class GARunner extends Thread {
 			pw.println("==================================");
 			pw.println("# cross pts:\t" + c.numCrossPts);
 			pw.println("mut prob:\t" + c.mutationProb);
-			pw.println("num mut:\t" + c.numMutations);
+			pw.println("mut amt:\t" + c.mutAmount);
 			pw.println("pop size:\t" + c.populationSize);
 			pw.println("elite size:\t" + c.eliteSize);
 			pw.println("generations:\t" + c.generations);
@@ -116,9 +124,9 @@ public class GARunner extends Thread {
 						return Double.compare(b.getFitness(), a.getFitness());
 					}
 				});
-				
-				if (s.generations % 100 == 0) {
-					Genome best = population.get(0);
+
+				Genome best = population.get(0);
+				if (s.generations % 25 == 0) {
 					Genome worst = population.get(population.size() - 1);
 					double mean = 0, variance = 0;
 					for (Genome g : population) {
@@ -136,25 +144,28 @@ public class GARunner extends Thread {
 						e.printStackTrace();
 					}
 				}
+				if (best.getFitness() > s.bestFitness) {
+					s.bestFitness = best.getFitness();
+				}
+				
+//				if (c.selCutoff > 0) {
+//					for (int i = 0; i < c.selCutoff; i++) {
+//						population.remove(population.size() - 1);
+//					}
+//				}
 				
 				List<Genome> nextPop = new ArrayList<>();
 				
-				// crossover 
+				// crossover and mutation
 				for (int j = 0; j < c.populationSize - c.eliteSize; j++) {
 					Genome parent1 = sampleGenome(population);
 					Genome parent2 = sampleGenome(population);
 					nextPop.add(new Genome(parent1, parent2));
 				}
 				
+				// elitism
 				for (int j = 0; j < c.eliteSize; j++) {
 					nextPop.add(population.get(j));
-				}
-				
-				// mutation
-				for (int j = 0; j < c.populationSize; j++) {
-					if (Math.random() < c.mutationProb) {
-						nextPop.get(j).mutate(c.numMutations);
-					}
 				}
 				
 				population = nextPop;	

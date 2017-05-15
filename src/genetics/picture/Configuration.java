@@ -2,15 +2,16 @@ package genetics.picture;
 
 public class Configuration {
 	public double mutationProb = 0.01;
-	public int numMutations = 25;
+	public double mutAmount = 0.1;
 	public int populationSize = 50;
 	public int generations = -1;
-	public int eliteSize = 5;
+	public int eliteSize = 0;
 	public int compSize = 125;
-	public int outSize = 500;
-	public int numShapes = 50;
-	public int numVertices = 4;
-	public int numCrossPts = 5;
+	public int outSize = 1024;
+	public int numShapes = 125;
+	public int numVertices = 3;
+	public int numCrossPts = 3;
+	public int selCutoff = 0;
 	public boolean writeConfig = true;
 	public boolean writeStats = true;
 	public boolean replaceDir = true;

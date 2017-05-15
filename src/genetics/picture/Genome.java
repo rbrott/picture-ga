@@ -2,7 +2,7 @@ package genetics.picture;
 import java.awt.image.BufferedImage;
 
 public class Genome {
-	private byte[] data;
+	private double[] data;
 	private double fitness;
 	private BufferedImage refImage;
 	private Configuration c;
@@ -10,9 +10,12 @@ public class Genome {
 	public Genome(BufferedImage image, Configuration config) {
 		refImage = image;
 		c = config;
-		data = new byte[c.genomeSize()];
-		for (int j = 0; j < c.genomeSize(); j++) {
-			data[j] = (byte) (256 * Math.random());
+		data = new double[c.genomeSize()];
+		for (int j = 0; j < data.length; j++) {
+			data[j] = Math.random();
+//			if (j % c.geneSize() == 3) {
+//				data[j] *= 0.5;
+//			}
 		}
 		updateFitness();
 	}
@@ -20,7 +23,7 @@ public class Genome {
 	public Genome(Genome parent1, Genome parent2) {
 		refImage = parent1.refImage;
 		c = parent1.c;
-		data = new byte[c.genomeSize()];
+		data = new double[c.genomeSize()];
 		
 		int[] crossoverPts = new int[c.numCrossPts + 2];
 		crossoverPts[1] = c.genomeSize();
@@ -34,7 +37,7 @@ public class Genome {
 			crossoverPts[j] = pt;
 		}
 		for (int i = 1; i < crossoverPts.length; i++) {
-			byte[] src;
+			double[] src;
 			if (i % 2 == 1) {
 				src = parent1.getData();
 			} else {
@@ -44,10 +47,23 @@ public class Genome {
 			System.arraycopy(src, start, data, start, end - start);
 		}
 		
+		for (int i = 0; i < c.genomeSize(); i++) {
+			if (Math.random() < c.mutationProb) {
+				double val = data[i];
+				val += (2 * c.mutAmount * Math.random()) - c.mutAmount;
+				if (val > 1) {
+					val = 1;
+				} else if (val < 0) {
+					val = 0;
+				}
+				data[i] = val;
+			}
+		}
+		
 		updateFitness();
 	}
 	
-	public byte[] getData() {
+	public double[] getData() {
 		return data;
 	}
 	
@@ -58,41 +74,6 @@ public class Genome {
 	private void updateFitness() {
 		BufferedImage image = ImageUtil.getImage(data, c.compSize, c);
 		fitness = ImageUtil.compare(refImage, image);
-	}
-	
-	public void bitMutate(int k) {
-		for (int i = 0; i < k; i++) {
-			int numIndex = (int) (c.genomeSize() * Math.random());
-			int bitIndex = (int) (8 * Math.random());
-			data[numIndex] ^= (1 << bitIndex);
-		}
-		updateFitness();
-	}
-	
-	public void mutate(int k) {
-		for (int i = 0; i < k; i++) {
-			int gene = (int) (c.numShapes * Math.random());
-			switch (Mutation.random()) {
-			case COLOR_CHANGE:
-				for (int j = 0; j < 4; j++) {
-					data[gene * c.geneSize() + j] = (byte) (256 * Math.random());
-				}
-				break;
-			case VERTEX_CHANGE:
-				int vertex = (int) (c.numVertices * Math.random());
-				data[gene * c.geneSize() + 4 + 2 * vertex] = (byte) (256 * Math.random());
-				data[gene * c.geneSize() + 5 + 2 * vertex] = (byte) (256 * Math.random());
-				break;
-			case SWAP:
-				int otherGene = (int) (c.numShapes * Math.random());
-				byte[] temp = new byte[c.geneSize()];
-				System.arraycopy(data, gene * c.geneSize(), temp, 0, c.geneSize());
-				System.arraycopy(data, otherGene * c.geneSize(), data, gene * c.geneSize(), c.geneSize());
-				System.arraycopy(temp, 0, data, otherGene * c.geneSize(), c.geneSize());
-				break;
-			}
-		}
-		updateFitness();
 	}
 	
 }
